@@ -1,0 +1,28 @@
+name: Update IP list
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch feeds
+        run: |
+          curl -s https://example.com/feeds/ipv4.txt -o feeds/ipv4.txt
+          curl -s https://example.com/feeds/ipv6.txt -o feeds/ipv6.txt
+      - name: Merge and dedupe
+        run: |
+          mkdir -p ips
+          cat feeds/ipv4.txt >> ips/ipv4.txt
+          sort -u ips/ipv4.txt -o ips/ipv4.txt
+          cat feeds/ipv6.txt >> ips/ipv6.txt
+          sort -u ips/ipv6.txt -o ips/ipv6.txt
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add ips/ipv4.txt ips/ipv6.txt
+          git commit -m "ci: update IP lists" || echo "No changes"
+          git push
